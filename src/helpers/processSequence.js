@@ -14,38 +14,49 @@
  * Иногда промисы от API будут приходить в состояние rejected, (прямо как и API в реальной жизни)
  * Ответ будет приходить в поле {result}
  */
- import Api from '../tools/api';
+import Api from '../tools/api';
+import { allPass } from './validators.js';
 
- const api = new Api();
+const api = new Api();
 
- /**
-  * Я – пример, удали меня
-  */
- const wait = time => new Promise(resolve => {
-     setTimeout(resolve, time);
- })
+const isLengthValid = str => str.length > 2 && str.length < 10;
+const isPositive = str => parseFloat(str) > 0;
+const isDecimal = str => /^[0-9.]+$/.test(str);
 
- const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
-     /**
-      * Я – пример, удали меня
-      */
-     writeLog(value);
+const isValid = () => allPass([isLengthValid, isPositive, isDecimal])
 
-     api.get('https://api.tech/numbers/base', {from: 2, to: 10, number: '01011010101'}).then(({result}) => {
-         writeLog(result);
-     });
+const round = Math.round;
+const square = x => x * x;
+const mod3 = x => x % 3;
 
-     wait(2500).then(() => {
-         writeLog('SecondLog')
+const convertToNumber = parseFloat;
 
-         return wait(1500);
-     }).then(() => {
-         writeLog('ThirdLog');
+const logAndPass = writeLog => value => {
+  writeLog(value);
+  return value;
+};
 
-         return wait(400);
-     }).then(() => {
-         handleSuccess('Done');
-     });
- }
+const processSequence = ({ value, writeLog, handleSuccess, handleError }) => {
+  const log = logAndPass(writeLog);
+
+  if (!isValid(value)) {
+    return handleError('ValidationError');
+  }
+
+  const number = log(round(convertToNumber(value)));
+
+  api.get('https://api.tech/numbers/base', {
+    number,
+    from: 10,
+    to: 2,
+  })
+    .then(({ result }) => log(result))
+    .then(binaryStr => log(binaryStr.length))
+    .then(length => log(square(length)))
+    .then(squared => log(mod3(squared)))
+    .then(id => api.get(`https://animals.tech/${id}`)({}))
+    .then(({ result }) => handleSuccess(result))
+    .catch(handleError);
+};
 
 export default processSequence;

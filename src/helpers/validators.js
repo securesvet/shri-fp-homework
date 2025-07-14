@@ -13,7 +13,7 @@
  * Если какие либо функции написаны руками (без использования библиотек) это не является ошибкой
  */
 
-function allPass(predicates) {
+export function allPass(predicates) {
   return function (...args) {
     return predicates.every(predicate => predicate(...args));
   };
